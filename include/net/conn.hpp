@@ -108,7 +108,7 @@ public:
 	{
 		auto [id, len] = read_header();
 		if (id == 0) {
-			throw std::runtime_error("invalid message id");
+			return;
 		}
 		std::vector<uint8_t> payload(len);
 		rw.read(payload);
