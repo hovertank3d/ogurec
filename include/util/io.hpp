@@ -16,11 +16,11 @@
 namespace io {
 
 template <class T, class K>
-concept custom_write = requires(T t) {
-	{ t.write(K()) } -> std::same_as<ssize_t>;
+concept custom_write = requires(T t, K &k) {
+	{ t.write(k) } -> std::same_as<ssize_t>;
 };
 template <class T, class K>
-concept custom_read = requires(T& t, K& k) {
+concept custom_read = requires(T& t, K &k) {
 	{ t.read(k) } -> std::same_as<ssize_t>;
 };
 
@@ -108,7 +108,6 @@ public:
 template <class I>
 class serialized_io {
 	I io;
-
 public:
 	serialized_io(I io)
 	    : io(io)
@@ -193,7 +192,7 @@ public:
 	}
 
 	template <custom_write<serialized_io<I>> T>
-	ssize_t write(T& f)
+	ssize_t write(T f)
 	{
 		return f.write(*this);
 	}

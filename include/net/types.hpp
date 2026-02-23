@@ -72,6 +72,25 @@ struct vec2 {
 	T y;
 };
 
+// NetMessages
+
+struct connect {
+	static constexpr uint8_t packet_id = 1;
+	
+	std::string version;
+};
+
+struct disconnect {
+	static constexpr uint8_t packet_id = 2;
+
+	nstring reason;
+};
+
+struct accept {
+	uint8_t slot;
+	uint8_t server_flags = 0;
+};
+
 inline nstring operator""_ns(const char* str, std::size_t)
 {
 	return nstring{nstring::Literal, str};
@@ -79,3 +98,5 @@ inline nstring operator""_ns(const char* str, std::size_t)
 
 }
 }
+
+using net::packet::operator""_ns;

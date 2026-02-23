@@ -7,9 +7,9 @@ this should suffice as a starting point.
 | id | direction | captured | known | packet name | short description |  
 |-|-|-|-|-|-|
 | 0 |  | &#x2610; | &#x2610; | | |
-| 1 | c->s | &#x2611; | &#x2610; | | |
-| 2 |  | &#x2610; | &#x2610; | | |
-| 3 | c<-s | &#x2611; | &#x2610; | | |
+| 1 | c->s | &#x2611; | &#x2611; | connect | login initialization |
+| 2 | s->c | &#x2611; | &#x2611; | disconnect | kick client |
+| 3 | c<-s | &#x2611; | &#x2611; | accept | accept connection |
 | 4 | c->s | &#x2611; | &#x2610; | | |
 | 5 | c->s | &#x2611; | &#x2610; | | |
 | 6 | c->s | &#x2611; | &#x2610; | | |
@@ -262,3 +262,59 @@ this should suffice as a starting point.
 | 253 |  | &#x2610; | &#x2610; | | |
 | 254 |  | &#x2610; | &#x2610; | | |
 | 255 |  | &#x2610; | &#x2610; | | |
+
+
+## `id 1` `c->s` connect
+
+| name | type | size | description |
+|--|--|--|--|
+| version | pstring | - | terraria protocol version in form of "TerrariaXXX" |
+
+ilspy decompilation:
+```csharp
+    // Terraria.NetMessage.SendData
+    case 1:
+        writer.Write("Terraria" + 318);
+        break;
+```
+
+## `id 2` `s->c` disconnect
+kick client from server. server closes connection right after sending this
+
+| name | type | size | description |
+|--|--|--|--|
+| reason | netstring | - | reason for kicking. may be ban, invalid client version, etc. |
+
+ilspy decompilation:
+```csharp
+    // Terraria.NetMessage.SendData
+    case 2:
+        text.Serialize(writer);
+        if (Main.dedServ)
+        {
+            Console.WriteLine(Language.GetTextValue("CLI.ClientWasBooted", Netplay.Clients[num].Socket.GetRemoteAddress().ToString(), text));
+        }
+        break;
+```
+
+## `id 3` `s->c` accept
+accept client connection, pick new (player) slot id and send server flags
+
+| name | type | size | description |
+|--|--|--|--|
+| slot | uint8_t | 1 | player id |
+| server_flags | uint8_t | 1 | flags, always 0 |
+
+ilspy decompilation:
+```csharp
+    // Terraria.NetMessage.SendData
+    case 3:
+        writer.Write((byte)remoteClient);
+        writer.Write(value: false);
+        break;
+
+    // Terraria.MessageBuffer.GetData
+    int num95 = reader.ReadByte();
+    bool value2 = reader.ReadBoolean();
+    Netplay.Connection.ServerSpecialFlags[2] = value2;
+```
