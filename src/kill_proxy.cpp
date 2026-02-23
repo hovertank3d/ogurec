@@ -1,21 +1,9 @@
 #include <cstdint>
-#include <span>
 #include <thread>
 
 #include "net/client.hpp"
 #include "net/conn.hpp"
 #include "net/server.hpp"
-#include "net/types.hpp"
-
-void forward_packets(net::conn& dst, net::conn& src)
-{
-	for (int i = 1; i < 255; i++) {
-		src.reg_handler(i, [&dst, i](std::span<uint8_t> data) {
-			dst.send_packet(i, data);
-			return true;
-		});
-	}
-}
 
 int main(int argc, char* argv[])
 {
@@ -28,23 +16,16 @@ int main(int argc, char* argv[])
 	auto server_conn = server.connect();
 	auto proxy_conn = proxy.accept();
 
-	uint8_t slot;
-	server_conn.reg_handler<net::packet::accept>([&slot](auto& a) {
-		slot = a.client_id;
-		return false;
-	});
-
-	forward_packets(server_conn, proxy_conn);
-	forward_packets(proxy_conn, server_conn);
-
-	auto handle_loop = [](net::conn& c) {
+	auto handle_loop = [](net::conn& src, net::conn& dst) {
 		for (;;) {
-			c.handle();
+			src.handle([&dst] (uint8_t id, std::span<uint8_t> payload) {
+				dst.send_packet(id, payload);
+			});
 		}
 	};
 
-	std::thread server_thread(handle_loop, std::ref(server_conn));
-	std::thread proxy_thread(handle_loop, std::ref(proxy_conn));
+	std::thread server_thread(handle_loop, std::ref(server_conn), std::ref(proxy_conn));
+	std::thread proxy_thread(handle_loop, std::ref(proxy_conn), std::ref(server_conn));
 
 	while (1) {
 	}

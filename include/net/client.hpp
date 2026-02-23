@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cerrno>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <string>

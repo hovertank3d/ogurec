@@ -1,8 +1,6 @@
 #pragma once
 
 #include <cerrno>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 #include <string>
@@ -44,6 +42,9 @@ public:
 		sock_fd = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock_fd < 0)
 			throw std::runtime_error(strerror(errno));
+
+		int yes=1;
+		setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof yes);
 
 		int bindStatus = ::bind(sock_fd, (struct sockaddr*)&server_address, sizeof(server_address));
 		if (bindStatus < 0)

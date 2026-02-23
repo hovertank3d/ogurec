@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <span>
+#include <stdexcept>
 #include <vector>
 
 #include <netinet/in.h>
@@ -20,6 +21,7 @@ class conn {
 
 	using handler = std::function<bool(std::span<uint8_t>)>;
 	using handler_list = std::vector<handler>;
+
 	std::array<handler_list, 256> handlers;
 	std::map<uint16_t, handler_list> netmodule_handlers;
 
@@ -54,12 +56,6 @@ public:
 			rw.read(payload);
 			decode_packet(payload, t);
 		}
-	}
-
-	template <class H>
-	void reg_handler(int id, H h)
-	{
-		handlers[id].push_back(h);
 	}
 
 	template <packet::packet P, typename H>
@@ -107,55 +103,30 @@ public:
 		send_packet(T::packet_id, payload);
 	}
 
-	bool handle_netmodule(std::span<uint8_t> payload)
+	template <class T>
+	void handle(T unk_handler)
 	{
-		uint16_t id;
-		std::memcpy(&id, payload.data(), sizeof(id));
-		id = to_little(id);
-
-		if (netmodule_handlers[id].size() <= 0) {
-			// currently i won't bother implementing netmodules
-			// FIXME: return false
-			return true;
+		auto [id, len] = read_header();
+		if (id == 0) {
+			throw std::runtime_error("invalid message id");
 		}
+		std::vector<uint8_t> payload(len);
+		rw.read(payload);
 
+		if (handlers[id].size() <= 0) {
+			unk_handler(id, payload);
+		}
 		for (auto& h : handlers[id]) {
-			if (h(payload.subspan(2)) == true) {
-				return false;
+			if (h(payload) == true) {
+				return;
 			}
 		}
-		return true;
 	}
 
-	bool handle()
+
+	void handle()
 	{
-		try {
-			auto [id, len] = read_header();
-			if (id == 0) {
-				return false;
-			}
-
-			std::vector<uint8_t> payload(len);
-			rw.read(payload);
-
-			// got netmodule
-			if (id == 82) {
-				return handle_netmodule(payload);
-			}
-
-			if (handlers[id].size() <= 0) {
-				return false;
-			}
-
-			for (auto& h : handlers[id]) {
-				if (h(payload) == true) {
-					break;
-				}
-			}
-			return true;
-		} catch (io::file_io::eof e) {
-			return false;
-		}
+		handle([](int, std::vector<uint8_t>) {});
 	}
 };
 }
