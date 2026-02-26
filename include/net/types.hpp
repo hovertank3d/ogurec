@@ -87,6 +87,15 @@ struct disconnect {
 };
 
 struct accept {
+	static constexpr uint8_t packet_id = 3;
+
+	uint8_t slot;
+	uint8_t server_flags = 0;
+};
+
+struct player_info {
+	static constexpr uint8_t packet_id = 4;
+
 	uint8_t slot;
 	uint8_t server_flags = 0;
 };

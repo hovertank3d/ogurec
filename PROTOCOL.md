@@ -10,7 +10,7 @@ this should suffice as a starting point.
 | 1 | c->s | &#x2611; | &#x2611; | connect | login initialization |
 | 2 | s->c | &#x2611; | &#x2611; | disconnect | kick client |
 | 3 | c<-s | &#x2611; | &#x2611; | accept | accept connection |
-| 4 | c->s | &#x2611; | &#x2610; | | |
+| 4 | c->s | &#x2611; | &#x2610; | player_info | inform server about player appearance and permabuffs|
 | 5 | c->s | &#x2611; | &#x2610; | | |
 | 6 | c->s | &#x2611; | &#x2610; | | |
 | 7 | c<-s | &#x2611; | &#x2610; | | |
@@ -317,4 +317,82 @@ ilspy decompilation:
     int num95 = reader.ReadByte();
     bool value2 = reader.ReadBoolean();
     Netplay.Connection.ServerSpecialFlags[2] = value2;
+```
+
+## `id 4` `s<-c` accept
+inform server about player appearance and permabuffs
+
+| name | type | size | description |
+|--|--|--|--|
+| slot | uint8_t | 1 | player id |
+| skin_variant | uint8_t | 1 | skin varian |
+| voice_variant | uint8_t | 1 | voice varian |
+| voice_offset | float | 1 | voice pitch offset. range from . to . |
+| hair | uint8_t | 1 | hair |
+| name | string | - | player name |
+| hair_dye | uint8_t | 1 | hair dye |
+| hidden_accessories | bitset | 2 | hidden accessory slots |
+| hide_misc | bitset | 1 | idk |
+| hair_color | rgb | 3 |  |
+| skin_color | rgb | 3 |  |
+| eye_color | rgb | 3 |  |
+| shirt_color | rgb | 3 |  |
+| undershirt_color | rgb | 3 |  |
+| pants_color | rgb | 3 |  |
+| shoe_color | rgb | 3 |  |
+| player_difficulty | bitfield | 1 | TODO |
+| permanent_buffs | bitfield | 1 | torch god and super cart |
+| permanent_buffs_shimmer | bitfield | 1 | permanent buffs obtained from things from shimmering |
+
+
+ilspy decompilation:
+```csharp
+    // Terraria.NetMessage.SendData
+    writer.Write((byte)number);
+    writer.Write((byte)player5.skinVariant);
+    writer.Write((byte)player5.voiceVariant);
+    writer.Write(player5.voicePitchOffset);
+    writer.Write((byte)player5.hair);
+    writer.Write(player5.name);
+    writer.Write(player5.hairDye);
+    WriteAccessoryVisibility(writer, player5.hideVisibleAccessory);
+    writer.Write(player5.hideMisc);
+    writer.WriteRGB(player5.hairColor);
+    writer.WriteRGB(player5.skinColor);
+    writer.WriteRGB(player5.eyeColor);
+    writer.WriteRGB(player5.shirtColor);
+    writer.WriteRGB(player5.underShirtColor);
+    writer.WriteRGB(player5.pantsColor);
+    writer.WriteRGB(player5.shoeColor);
+    BitsByte bitsByte20 = (byte)0;
+    if (player5.difficulty == 1)
+    {
+        bitsByte20[0] = true;
+    }
+    else if (player5.difficulty == 2)
+    {
+        bitsByte20[1] = true;
+    }
+    else if (player5.difficulty == 3)
+    {
+        bitsByte20[3] = true;
+    }
+    bitsByte20[2] = player5.extraAccessory;
+    writer.Write(bitsByte20);
+    BitsByte bitsByte21 = (byte)0;
+    bitsByte21[0] = player5.UsingBiomeTorches;
+    bitsByte21[1] = player5.happyFunTorchTime;
+    bitsByte21[2] = player5.unlockedBiomeTorches;
+    bitsByte21[3] = player5.unlockedSuperCart;
+    bitsByte21[4] = player5.enabledSuperCart;
+    writer.Write(bitsByte21);
+    BitsByte bitsByte22 = (byte)0;
+    bitsByte22[0] = player5.usedAegisCrystal;
+    bitsByte22[1] = player5.usedAegisFruit;
+    bitsByte22[2] = player5.usedArcaneCrystal;
+    bitsByte22[3] = player5.usedGalaxyPearl;
+    bitsByte22[4] = player5.usedGummyWorm;
+    bitsByte22[5] = player5.usedAmbrosia;
+    bitsByte22[6] = player5.ateArtisanBread;
+    writer.Write(bitsByte22);
 ```
