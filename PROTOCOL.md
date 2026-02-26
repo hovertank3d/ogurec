@@ -10,8 +10,8 @@ this should suffice as a starting point.
 | 1 | c->s | &#x2611; | &#x2611; | connect | login initialization |
 | 2 | s->c | &#x2611; | &#x2611; | disconnect | kick client |
 | 3 | c<-s | &#x2611; | &#x2611; | accept | accept connection |
-| 4 | c->s | &#x2611; | &#x2610; | player_info | inform server about player appearance and permabuffs|
-| 5 | c->s | &#x2611; | &#x2610; | | |
+| 4 | c->s | &#x2611; | &#x2611; | player_info | inform server about player appearance and permabuffs|
+| 5 | c->s | &#x2611; | &#x2611; | player_inventory slot | tell the server about single inventory slot contents |
 | 6 | c->s | &#x2611; | &#x2610; | | |
 | 7 | c<-s | &#x2611; | &#x2610; | | |
 | 8 | c->s | &#x2611; | &#x2610; | | |
@@ -395,4 +395,50 @@ ilspy decompilation:
     bitsByte22[5] = player5.usedAmbrosia;
     bitsByte22[6] = player5.ateArtisanBread;
     writer.Write(bitsByte22);
+```
+
+## `id 5` `s<-c` player_inventory_slot
+tell the server about single inventory slot contents.
+flags[1] have something to do with auto stacking to locked chests
+
+| name | type | size | description |
+|--|--|--|--|
+| slot | uint8_t | 1 | player id |
+| inventory_id | uint16_t | 2 | inventory slot id |
+| stack | uint16_t | 2 | item count in the slot |
+| prefix | uint8_t | 1 | prefix id |
+| type | uint16_t | 2 | item id |
+| flags | bitset | 1 | flags. flags[0] - favourite, flags[1] - block transfer |
+
+ilspy decompilation:
+```csharp
+    // Terraria.NetMessage.SendData
+    writer.Write((byte)number);
+	writer.Write((short)number2);
+	Item item5 = new PlayerItemSlotID.SlotReference(Main.player[number], (int)number2).Item;
+	if (item5.Name == "" || item5.stack == 0 || item5.type == 0)
+	{
+		item5.SetDefaults(0);
+	}
+	int num7 = item5.stack;
+	int type = item5.type;
+	if (num7 < 0)
+	{
+		num7 = 0;
+	}
+	writer.Write((short)num7);
+	writer.Write(item5.prefix);
+	writer.Write((short)type);
+	writer.Write(new BitsByte
+	{
+		[0] = item5.favorited,
+		[1] = number3 != 0f
+	});
+    
+    // Terraria.MessageBuffer.GetData
+    bool[] canRelay = PlayerItemSlotID.CanRelay;
+	if (Main.netMode == 2 && num35 == whoAmI && canRelay.IndexInRange(num36) && canRelay[num36])
+	{
+		NetMessage.TrySendData(5, -1, whoAmI, null, num35, num36);
+	}
 ```

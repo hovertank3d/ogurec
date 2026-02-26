@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "util/io.hpp"
+#include "util/bitset.hpp"
 
 namespace net {
 namespace packet {
@@ -96,8 +97,42 @@ struct accept {
 struct player_info {
 	static constexpr uint8_t packet_id = 4;
 
-	uint8_t slot;
-	uint8_t server_flags = 0;
+	uint8_t 	slot;
+	uint8_t 	skin_variant;
+	uint8_t 	voice_variant;
+	float 		voice_offset;
+	uint8_t 	hair;
+	std::string name;
+	uint8_t 	hair_dye;
+	bitset<16>	hidden_accessories; // FIXME: this is rounded number of flags. Terraria may use less than 16
+	bitset<8>	hide_misc;			// same here
+	rgb 		hair_color;
+	rgb 		skin_color;
+	rgb 		eye_color;
+	rgb 		shirt_color;
+	rgb 		undershirt_color;
+	rgb 		pants_color;
+	rgb 		shoe_color;
+	bitset<4>	player_difficulty;
+	bitset<5>	permanent_buffs;
+	bitset<7>	permanent_buffs_shimmer;
+};
+
+struct player_inventory_slot {
+	static constexpr uint8_t packet_id = 5;
+
+	enum class slot_flags : int {
+		Favourite = 0,
+		BlockTransfer = 1,
+	};
+
+	uint8_t 	slot;
+	uint16_t 	item_slot_id;
+
+	uint16_t 	stack;
+	uint8_t 	prefix;
+	uint16_t 	type;
+	bitset<2> 	flags;
 };
 
 inline nstring operator""_ns(const char* str, std::size_t)
