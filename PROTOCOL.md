@@ -12,10 +12,10 @@ this should suffice as a starting point.
 | 3 | c<-s | &#x2611; | &#x2611; | accept | accept connection |
 | 4 | c->s | &#x2611; | &#x2611; | player_info | inform server about player appearance and permabuffs|
 | 5 | c->s | &#x2611; | &#x2611; | player_inventory slot | tell the server about single inventory slot contents |
-| 6 | c->s | &#x2611; | &#x2610; | | |
-| 7 | c<-s | &#x2611; | &#x2610; | | |
-| 8 | c->s | &#x2611; | &#x2610; | | |
-| 9 | c<-s | &#x2611; | &#x2610; | | |
+| 6 | c->s | &#x2611; | &#x2611; | request_world_info | |
+| 7 | c<-s | &#x2611; | &#x2611; | world_info | server sends world metadata |
+| 8 | c->s | &#x2611; | &#x2611; | request_spawn | request to spawn player at given location |
+| 9 | c<-s | &#x2611; | &#x2611; | set_loading_message | messages shown while loading the world |
 | 10 | c<-s | &#x2611; | &#x2610; | | |
 | 11 |  | &#x2610; | &#x2610; | | |
 | 12 | c->s | &#x2611; | &#x2610; | | |
@@ -441,4 +441,56 @@ ilspy decompilation:
 	{
 		NetMessage.TrySendData(5, -1, whoAmI, null, num35, num36);
 	}
+```
+
+
+## `id 6` `s<-c` request_world_info
+client asks server about world info (parts of world file header)
+
+| name | type | size | description |
+|--|--|--|--|
+| | | | |
+
+## `id 7` `s->c` world_info
+info about world state
+TODO describe fields
+
+| name | type | size | description |
+|--|--|--|--|
+| | | | |
+
+
+## `id 8` `s<-c` request_spawn
+request to spawn player at given location with team selected
+
+| name | type | size | description |
+|--|--|--|--|
+| tile | vec2<int> | 8 | spawn location |
+| team | uint8_t | 1 | team |
+
+```csharp
+	// Terraria.Netplay.InnerClientLoop
+    else if (Connection.State == 5 && WorldGen.worldCleared)
+	{
+		Connection.State = 6;
+		Main.player[Main.myPlayer].FindSpawn();
+		NetMessage.SendData(8, -1, -1, null, Main.player[Main.myPlayer].SpawnX, Main.player[Main.myPlayer].SpawnY, Main.player[Main.myPlayer].team);
+	}
+```
+
+## `id 9` `s<-c` set_loading_message
+
+| name | type | size | description |
+|--|--|--|--|
+| sections | uint32 | 4 | number of sections |
+| message | nstring | - | message to be shown |
+| flags | uint8_t | 1 | unused |
+
+```csharp
+    // Terraria.NetMessage.SendData
+    case 9: 
+	    writer.Write(number);
+	    text.Serialize(writer);
+	    BitsByte bitsByte30 = (byte)number2;
+	    writer.Write(bitsByte30);
 ```

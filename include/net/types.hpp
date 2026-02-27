@@ -1,6 +1,8 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <unistd.h>
@@ -73,6 +75,30 @@ struct vec2 {
 	T y;
 };
 
+
+template<class T>
+struct plist {
+	std::vector<T> v;
+
+	template <class K>
+	ssize_t read(io::serialized_io<K>& io) {
+		uint8_t len;
+
+		auto offset = io.read(len);
+		v.resize(len);
+		offset += io.read(v);
+
+		return offset;
+	}
+	
+	template <class K>
+	ssize_t write(io::serialized_io<K>& io) {
+		auto offset = io.write(uint8_t(v.size()));
+		offset += io.write(v);
+		return offset;
+	}
+};
+
 // NetMessages
 
 struct connect {
@@ -133,6 +159,70 @@ struct player_inventory_slot {
 	uint8_t 	prefix;
 	uint16_t 	type;
 	bitset<2> 	flags;
+};
+
+struct request_world_info {
+	static constexpr uint8_t packet_id = 6;
+};
+
+struct world_info {
+	static constexpr uint8_t packet_id = 7;
+
+	int32_t time;
+	bitset<3> time_flags; // day? blood moon? eclipse?
+	uint8_t moon_phase;
+	vec2<uint16_t> tiles_limit;
+	vec2<uint16_t> spawn_tile;
+	uint16_t surface_level;
+	uint16_t rock_level;
+	int32_t worldid;
+	std::string worldname;
+	uint8_t gamemode;
+	std::array<uint8_t, 16> uuid;
+	uint64_t worldgen_version;
+	uint8_t moon_type;
+	std::array<uint8_t, 13> backgrounds;
+	std::array<uint8_t, 3> bg_styles;
+
+	float wind_speed_target;
+	uint8_t num_clouds;
+
+	std::array<int32_t, 3> trees;
+	std::array<uint8_t, 4> trees_styles;
+	std::array<int32_t, 3> cave_bg;
+	std::array<uint8_t, 4> cave_bg_styles;
+
+	std::array<uint8_t, 13> tree_tops;
+
+	float max_raining;
+
+	bitset<81> flags; // TODO: document them
+
+	uint8_t sundial_cooldown;
+	uint8_t moondial_cooldown;
+
+	std::array<uint16_t, 7> world_ores;
+	int8_t invasion_type;
+
+	uint64_t lobby_id = 0;
+
+	float sandstorm_severity;
+	plist<vec2<uint16_t>> extra_spawn_points;
+};
+
+struct request_spawn {
+	static constexpr uint8_t packet_id = 8;
+	
+	vec2<int32_t>  	tile;
+	uint8_t    		team;
+};
+
+struct set_loading_message {
+	static constexpr uint8_t packet_id = 9;
+	
+	int32_t sections;
+	nstring message;
+	uint8_t flags = 0;
 };
 
 inline nstring operator""_ns(const char* str, std::size_t)
